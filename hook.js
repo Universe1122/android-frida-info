@@ -39,6 +39,7 @@ function packet_logging(){
         const headers = request.headers();
         const request_body = request.body();
         const url = request.url();
+        const header_str = getHeaderInfo(headers);
         let request_body_str = "";
 
         if(request_body){
@@ -50,8 +51,7 @@ function packet_logging(){
             request_body_str = bufferInstance.readUtf8();
         }
         
-        // TODO print cookie
-        return `${method} ${url}\r\n${headers}\r\n${request_body_str}`;
+        return `${method} ${url}\r\n${header_str}\r\n${request_body_str}`;
     }
 
     function response_pretty(response){
@@ -60,6 +60,7 @@ function packet_logging(){
         const message = response.message();
         const protocol = response.protocol().toString().toUpperCase();
         const response_body = response.body();
+        const header_str = getHeaderInfo(headers);
         let response_body_str = "";
 
         if(response_body && response_body.contentLength() != -1){
@@ -67,8 +68,25 @@ function packet_logging(){
             response_body_str = new_response_body.string();
         }
 
-        // TODO print cookie
-        return `${protocol} ${status_code} ${message}\r\n${headers}\r\n${response_body_str}`;
+
+        return `${protocol} ${status_code} ${message}\r\n${header_str}\r\n${response_body_str}`;
+    }
+
+    function getHeaderInfo(header){
+        let iterator = header.names().iterator();
+        let header_str = "";
+
+        while(iterator.hasNext()){
+            let key = iterator.next().toString();
+            let value = header.toMultimap().get(key).toString();
+
+            value = value.substr(1);
+            value = value.substr(0, value.length - 1);
+
+            header_str += `${key}: ${value}\r\n`;
+        }
+
+        return header_str;
     }
 
     function printPacket(request, response){
